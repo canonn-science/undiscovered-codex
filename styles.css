@@ -19,6 +19,14 @@ body {
     font-size: 16px;
 }
 
+#typeahead {
+    position: relative;
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+
 #submit-button {
     padding: 10px;
     font-size: 16px;

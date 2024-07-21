@@ -18,14 +18,23 @@
             <div id="search-container">
                 <form action="" method="get">
                     <input type="text" id="search-box" name="cmdr" placeholder="Your commander name.." />
+                    <input type="text" id="typeahead" name="System" placeholder="Enter a system name..."
+                        autocomplete="off">
                     <button id="submit-button" type="submit">Submit</button>
                 </form>
 
             </div>
+            <div class="container">&nbsp;
+
+                <div id="results-container">
+                    <ul id="suggestions" class="suggestions"></ul>
+                </div>
+                <script src="js/typeahead.js"></script>
+            </div>
         </div>
     </header>
 
-    <div id="tooltip" style="position: absolute; display: none;"></div>
+    <div id="" style="position: absolute; display: none;"></div>
     <br />
     <div id="container">
         <div id="svg-container"></div>
