@@ -16,11 +16,11 @@
             <h1 class="title">Canonn Research</h1>
 
             <div id="search-container">
-                <input type="text" id="search-box" placeholder="Start typing to search..." oninput="searchCodex()" />
-                <div id="results-container"></div>
-                <button id="submit-button" onclick="submitSearch()">Submit</button>
-                <button class="nav-button" onclick="getNextValue()">Next</button>
-                <button class="nav-button" onclick="getPrevValue()">Prev</button>
+                <form action="" method="get">
+                    <input type="text" id="search-box" name="cmdr" placeholder="Your commander name.." />
+                    <button type="submit">Submit</button>
+                </form>
+
             </div>
         </div>
     </header>
