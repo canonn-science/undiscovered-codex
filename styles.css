@@ -1,0 +1,356 @@
+body {
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400;
+    background-color: #4f5d64;
+}
+
+#search-container {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+#search-box {
+    position: relative;
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+#submit-button {
+    padding: 10px;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.nav-button {
+    padding: 10px;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.result-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.result-item:hover {
+    background-color: #f0f0f0;
+}
+
+
+#results-container {
+    position: absolute;
+    top: calc(100% + 5px);
+    /* Position right below the search box */
+    left: 0;
+    display: none;
+    width: 100%;
+    /* Match the width of the search box */
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+    /* max-height: 200px; */
+    /* overflow-y: auto; */
+    z-index: 1000;
+    /* Ensure it appears above other elements */
+}
+
+#results-container.active {
+    display: block;
+    /* Display it when it has the 'active' class */
+}
+
+#selected-record {
+    /* margin-top: 10px; */
+    /* Adjust as needed */
+    /*padding: 10px;
+    border: 1px solid #ccc;
+    display: block;
+    background-color: rgb(90, 90, 90);*/
+    z-index: 0;
+    /* Ensure it appears below the results container */
+}
+
+
+
+header {
+    background-color: #263238;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 50px;
+    /* Adjust the height of the logo as needed */
+    margin-right: 20px;
+}
+
+.title {
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 400;
+    color: #ef7b04;
+
+    /* Adjust the font size as needed */
+    margin: 0;
+}
+
+
+svg {
+    display: block;
+    /* Ensure SVG fills its container */
+    border: 1px solid black;
+    /* Add a border for better visibility */
+    width: 100%;
+    height: auto;
+    /* Maintain aspect ratio */
+}
+
+.region:hover {
+    fill-opacity: 50%;
+    fill: rgb(170, 0, 255);
+    fill-opacity: 10%;
+}
+
+
+#svg-container {
+    width: 50%;
+    /* Adjust as needed */
+    /*height: 50%;*/
+    /* Adjust as needed */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    /* Set the border */
+    border-radius: 15px;
+    /* Set the rounded corners */
+    overflow: hidden;
+    /* Ensure content doesn't overflow */
+    display: inline-block;
+
+    /* Align the container */
+    /* Align items to the top */
+}
+
+
+
+#container {
+    display: flex;
+    width: 100%;
+}
+
+#text-panel {
+    width: 50%;
+    /* Adjust as needed */
+    padding: 10px;
+    /* Optional: Add padding for better appearance */
+    box-sizing: border-box;
+    /* Ensure padding doesn't affect the width */
+}
+
+#tooltip {
+    background: cornsilk;
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+
+a {
+    color: white;
+    /* Default link color */
+    text-decoration: none;
+    /* Remove underline */
+    font-weight: bold;
+    /* Normal font weight */
+}
+
+/* Hover style */
+a:hover {
+    color: white;
+    /* Change text color to white on hover */
+    text-decoration: underline;
+    /* Underline on hover */
+    font-weight: bold;
+    /* Bold text on hover */
+}
+
+a.no-underline:hover {
+    text-decoration: none;
+    /* Override underline on hover */
+    color: white;
+    /* Keep the color change on hover */
+    font-weight: bold;
+    /* Keep the bold text on hover */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background-color: #f2f2f2;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid #ddd;
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400;
+    color: whitesmoke;
+}
+
+tr:nth-child(even) {
+    background-color: #6e6e6e;
+}
+
+th {
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400;
+    color: #ef7b04;
+    background-color: #263238;
+    /* color: rgb(203, 195, 195); */
+}
+
+/* Pagination styles */
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+}
+
+.page-item {
+    margin: 0 5px;
+}
+
+.page-link {
+    border: none;
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    text-align: center;
+    cursor: pointer;
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 400;
+    border-radius: 3px;
+}
+
+.page-link:hover {
+    background-color: #0056b3;
+}
+
+.page-item.disabled .page-link {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.nowrap-cell {
+    white-space: nowrap;
+}
+
+.green-tick {
+    color: green;
+    font-size: 24px;
+}
+
+.red-cross {
+    color: red;
+    font-size: 24px;
+}
+
+.mat1 {
+    text-align: right;
+    /* Align text to the left */
+    background-color: #ee5f5b;
+    color: black;
+}
+
+.mat2 {
+    text-align: right;
+    /* Align text to the left */
+    background-color: orange;
+    color: black;
+}
+
+.mat3 {
+    text-align: right;
+    /* Align text to the left */
+    background-color: #62c462;
+    color: black;
+}
+
+.mat4 {
+    text-align: right;
+    /* Align text to the left */
+    background-color: #5bc0de;
+    color: black;
+}
+
+#materialsContainer {
+    display: none;
+}
+
+.hidden {
+    display: none;
+}
+
+.inactive {
+    background-color: #ddd;
+}
+
+.active {
+    background-color: orange;
+}
+
+.image-panel {
+    width: 100%;
+    margin-top: -10px;
+    max-width: 1000px;
+    align-items: flex-start;
+    /* Limiting the maximum width */
+    /*margin: auto;*/
+    border: 1px solid #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-panel img {
+    width: 100%;
+
+    border-radius: 15px 15px 0 0;
+}
+
+.caption {
+    font-family: 'Open Sans', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 400;
+    color: #ef7b04;
+    padding: 10px;
+    background-color: #263238;
+    border-radius: 0 0 15px 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    /* Adjust the height as needed */
+}
