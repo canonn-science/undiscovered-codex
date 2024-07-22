@@ -14,17 +14,57 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => console.error('Error fetching the SVG:', error));
 });
 
+
+async function fetchCoordinates(cmdr_system) {
+    try {
+        // Make a request to the API
+        const response = await fetch(`https://us-central1-canonn-api-236217.cloudfunctions.net/query/typeahead?q=${cmdr_system}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        // Parse the response as JSON
+        const data = await response.json();
+
+        // Find the entry with the matching name in the min_max array
+        const entry = data.min_max.find(item => item.name === cmdr_system);
+
+        // If entry is found, return the coordinates as an array
+        if (entry) {
+            return [entry.x, entry.y, entry.z];
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+}
+
+
+
 async function fetchCoordinatesAndAddCircles(svgContainer) {
     url = new URL(window.location.href);
     // Extract the query parameters
     params = new URLSearchParams(url.search);
     // Get the value of the 'cmdr' parameter
     const cmdr = params.get('cmdr');
+    var cmdr_system = params.get('system');
 
     if (!cmdr) {
         console.error('No cmdr parameter found in the URL');
         return;
     }
+
+    if (!cmdr_system) {
+        cmdr_system = "Sol"
+        var cmdr_coords = [0, 0, 0];
+    } else {
+        var cmdr_coords = await fetchCoordinates(cmdr_system);
+    }
+
+    document.getElementById('search-box').value = cmdr;
+    console.log("did you set it?")
 
     // Fetch the list of entryid and hud_category from the API
     const apiUrl = `https://us-central1-canonn-api-236217.cloudfunctions.net/query/missing/codex?cmdr=${cmdr}`;
@@ -143,7 +183,7 @@ function addCircleToSVG(parent, svgElement, x, y, hoverText, systemName, entryid
     const newCircle = document.createElementNS(svgns, 'circle');
     newCircle.setAttribute('cx', x);
     newCircle.setAttribute('cy', y);
-    newCircle.setAttribute('r', '8'); // Adjust radius as needed
+    newCircle.setAttribute('r', '7'); // Adjust radius as needed
     newCircle.setAttribute('fill', 'red');
     newCircle.setAttribute('fill-opacity', '0.5'); // 50% transparency
     newCircle.setAttribute('class', `entry_${entryid}`); // Set the class to the entryid
