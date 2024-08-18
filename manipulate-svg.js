@@ -211,6 +211,8 @@ function addCircleToSVG(parent, svgElement, x, y, hoverText, systemName, entryid
             circles.forEach(circle => {
                 circle.setAttribute('fill', 'yellow');
             });
+            //now bring the element to the front 
+            svgElement.appendChild(circle);
             showTooltip(event, hoverText);
         }
     });
