@@ -104,6 +104,7 @@ async function renderData(svgContainer, item, csvText) {
     // Split CSV text into lines
     const lines = csvText.trim().split('\n');
     const circleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    circleGroup.setAttribute('id', 'circleGroup');
     svgElement.append(circleGroup); // Add the group as the first child of the SVG
 
     // Process each line (assuming no header and x, y are in fields 2 and 3)
@@ -210,12 +211,11 @@ function addCircleToSVG(parent, svgElement, x, y, hoverText, systemName, entryid
             const circles = document.querySelectorAll(`.entry_${entryid}`);
             circles.forEach(circle => {
                 circle.setAttribute('fill', 'yellow');
+                //now bring the element to the front 
+                svgElement.appendChild(circle);
             });
-
-
             showTooltip(event, hoverText);
-            //now bring the element to the front 
-            svgElement.appendChild(circle);
+
         }
     });
 
