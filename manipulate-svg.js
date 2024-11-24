@@ -1,19 +1,78 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     const svgContainer = document.getElementById('svg-container');
+    const systemInput = document.getElementById('typeahead'); // Updated to match your input ID
+    const cmdrInput = document.getElementById('search-box'); // Added to reference the commander input
 
-    // Load the SVG file
-    fetch('RegionMap.svg')
-        .then(response => response.text())
-        .then(svgText => {
-            // Insert the SVG into the container
-            svgContainer.innerHTML = svgText;
+    // Extract URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const cmdrParam = urlParams.get('cmdr');
+    const systemParam = urlParams.get('System');
 
-            // After loading SVG, fetch coordinates and add circles
-            fetchCoordinatesAndAddCircles(svgContainer); // Pass svgContainer as an argument
-        })
-        .catch(error => console.error('Error fetching the SVG:', error));
+    // Set the input values if parameters are present
+    if (cmdrParam) {
+        cmdrInput.value = cmdrParam;
+    }
+    if (systemParam) {
+        systemInput.value = systemParam;
+    }
+
+    const cmdr_system = systemParam ? systemParam.trim() : ''; // Get the input value
+
+    // First, fetch coordinates if cmdr_system is provided
+    if (cmdr_system) {
+        console.log("Fetching coordinates for " + cmdr_system);
+
+        // Fetch coordinates asynchronously
+        fetchCoordinates(cmdr_system)
+            .then(coordinates => {
+                console.log("Coordinates: ", coordinates);
+
+                // Now that coordinates are fetched, load the SVG map
+                fetch('RegionMap.svg')
+                    .then(response => response.text())
+                    .then(svgText => {
+                        // Insert the SVG into the container
+                        svgContainer.innerHTML = svgText;
+                        fetchCoordinatesAndAddCircles(svgContainer, coordinates); // Use the coordinates
+                    })
+                    .catch(error => console.error('Error fetching the SVG:', error));
+            })
+            .catch(error => {
+                console.error('Error fetching coordinates:', error);
+                // Handle error, perhaps by loading the SVG anyway or showing an error message
+                fetch('RegionMap.svg')
+                    .then(response => response.text())
+                    .then(svgText => {
+                        svgContainer.innerHTML = svgText;
+                        fetchCoordinatesAndAddCircles(svgContainer, null); // Pass null if coordinates aren't fetched
+                    })
+                    .catch(error => console.error('Error fetching the SVG:', error));
+            });
+    } else {
+        // If no cmdr_system provided, just load the SVG
+        fetch('RegionMap.svg')
+            .then(response => response.text())
+            .then(svgText => {
+                svgContainer.innerHTML = svgText;
+                fetchCoordinatesAndAddCircles(svgContainer, null); // Pass null if no system
+            })
+            .catch(error => console.error('Error fetching the SVG:', error));
+    }
 });
 
+
+function getCoordinatesSync(cmdr_system) {
+    let result = null;
+
+    // Create a wrapper to wait for the async function
+    (async () => {
+        result = await fetchCoordinates(cmdr_system);
+        console.log(result)
+    })();
+
+    return result;
+}
 
 async function fetchCoordinates(cmdr_system) {
     try {
@@ -26,9 +85,10 @@ async function fetchCoordinates(cmdr_system) {
         // Parse the response as JSON
         const data = await response.json();
 
+        console.log(data)
         // Find the entry with the matching name in the min_max array
         const entry = data.min_max.find(item => item.name === cmdr_system);
-
+        console.log(entry)
         // If entry is found, return the coordinates as an array
         if (entry) {
             return [entry.x, entry.y, entry.z];
@@ -43,7 +103,8 @@ async function fetchCoordinates(cmdr_system) {
 
 
 
-async function fetchCoordinatesAndAddCircles(svgContainer) {
+async function fetchCoordinatesAndAddCircles(svgContainer, coordinates) {
+
     url = new URL(window.location.href);
     // Extract the query parameters
     params = new URLSearchParams(url.search);
@@ -64,12 +125,14 @@ async function fetchCoordinatesAndAddCircles(svgContainer) {
         }
         const data = await apiResponse.json();
 
+        console.log(data)
+
         // we could filter some but no need
         const filteredItems = Object.values(data)
 
         // Process each item asynchronously
-        for (const item of filteredItems) {
-            fetchAndRenderItem(svgContainer, item);
+        for (const codexentry of filteredItems) {
+            fetchAndRenderItem(svgContainer, codexentry, coordinates);
         }
 
     } catch (error) {
@@ -77,8 +140,8 @@ async function fetchCoordinatesAndAddCircles(svgContainer) {
     }
 }
 
-async function fetchAndRenderItem(svgContainer, item) {
-    const { entryid, hud_category } = item;
+async function fetchAndRenderItem(svgContainer, codexentry, coordinates) {
+    const { entryid, hud_category } = codexentry;
     const coordinatesUrl = `https://storage.googleapis.com/canonn-downloads/dumpr/${hud_category}/${entryid}.csv`;
 
     try {
@@ -87,12 +150,41 @@ async function fetchAndRenderItem(svgContainer, item) {
             throw new Error(`CSV request failed with status ${response.status}`);
         }
         const csvText = await response.text();
-        await renderData(svgContainer, item, csvText);
 
+
+        let filteredCsvText = csvText;
+
+        console.log("coordinates " + coordinates);
+
+        if (coordinates) {
+            // Parse the CSV into rows
+            const rows = csvText.trim().split("\n");
+
+            const parsedData = rows.map(row => {
+                const [dummy, x, y, z, ...rest] = row.split(",").map(Number);
+                const distance = Math.sqrt(
+                    Math.pow(x - coordinates[0], 2) +
+                    Math.pow(y - coordinates[1], 2) +
+                    Math.pow(z - coordinates[2], 2)
+                );
+                return { distance, row }; // Include the original row data
+            });
+
+            // Sort by distance and take the 20 closest points
+            const closestPoints = parsedData
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, 20);
+
+            // Reconstruct the CSV
+            filteredCsvText = closestPoints.map(point => point.row).join("\n");
+        }
+
+        await renderData(svgContainer, codexentry, filteredCsvText, coordinates);
     } catch (error) {
         console.error(`Error fetching CSV for entryid ${entryid} and hud_category ${hud_category}:`, error);
     }
 }
+
 
 async function renderData(svgContainer, item, csvText) {
     const svgElement = svgContainer.querySelector('svg');
@@ -107,7 +199,7 @@ async function renderData(svgContainer, item, csvText) {
     circleGroup.setAttribute('id', 'circleGroup');
     svgElement.append(circleGroup); // Add the group as the first child of the SVG
 
-    // Process each line (assuming no header and x, y are in fields 2 and 3)
+    // Process each line (assuming no header and x, y are in fields 1 and 3)
     let index = 0;
     const batchSize = 1000; // Number of circles to add in each batch
     const intervalId = setInterval(() => {
@@ -116,7 +208,7 @@ async function renderData(svgContainer, item, csvText) {
             const fields = line.split(',');
             if (fields.length >= 3) {
                 const x = parseFloat(fields[1]);
-                const y = parseFloat(fields[3]);
+                const z = parseFloat(fields[3]);
                 const title = fields[0] + '<br>' + english_name;
                 const cRegion = fields[6];
                 const bRegion = fields[7];
@@ -128,11 +220,11 @@ async function renderData(svgContainer, item, csvText) {
                     regionElement.style.fillOpacity = "0.5";
                 }
 
-                if (!isNaN(x) && !isNaN(y)) {
+                if (!isNaN(x) && !isNaN(z)) {
                     const tx = ((x + 49985) * 83 / 4096);
-                    const ty = ((y + 24105) * 83 / 4096);
+                    const tz = ((z + 24105) * 83 / 4096);
 
-                    addCircleToSVG(svgElement, circleGroup, tx, 2048 - ty, title, fields[0], entryid, hud_category);
+                    addCircleToSVG(svgElement, circleGroup, tx, 2048 - tz, title, fields[0], entryid, hud_category);
                 }
             }
             index++;
