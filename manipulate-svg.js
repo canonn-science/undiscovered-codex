@@ -138,6 +138,15 @@ async function fetchCoordinatesAndAddCircles(svgContainer, coordinates) {
     } catch (error) {
         console.error('Error fetching data from API:', error);
     }
+
+    const systemInput = document.getElementById('typeahead');
+    if (coordinates != null) {
+        // Dispatch custom "SystemSelected" event
+        const systemSelectedEvent = new CustomEvent("SystemSelected", {
+            detail: { "x": coordinates[0], "y": coordinates[1], "z": coordinates[2] }
+        });
+        document.dispatchEvent(systemSelectedEvent);
+    }
 }
 
 async function fetchAndRenderItem(svgContainer, codexentry, coordinates) {
