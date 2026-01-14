@@ -125,11 +125,7 @@ svg {
     /* Maintain aspect ratio */
 }
 
-.region:hover {
-    fill-opacity: 50%;
-    fill: rgb(170, 0, 255);
-    fill-opacity: 10%;
-}
+
 
 
 #svg-container {

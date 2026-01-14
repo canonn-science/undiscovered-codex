@@ -1,3 +1,11 @@
+// Global zoom state
+const zoomState = {
+    isZoomed: false,
+    scale: 1,
+    baseRadius: 7,
+    originalViewBox: null,
+    originalWidth: null
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const svgContainer = document.getElementById('svg-container');
@@ -34,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(svgText => {
                         // Insert the SVG into the container
                         svgContainer.innerHTML = svgText;
+                        setupZoomHandlers(svgContainer);
                         fetchCoordinatesAndAddCircles(svgContainer, coordinates); // Use the coordinates
                     })
                     .catch(error => console.error('Error fetching the SVG:', error));
@@ -45,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(response => response.text())
                     .then(svgText => {
                         svgContainer.innerHTML = svgText;
+                        setupZoomHandlers(svgContainer);
                         fetchCoordinatesAndAddCircles(svgContainer, null); // Pass null if coordinates aren't fetched
                     })
                     .catch(error => console.error('Error fetching the SVG:', error));
@@ -55,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.text())
             .then(svgText => {
                 svgContainer.innerHTML = svgText;
+                setupZoomHandlers(svgContainer);
                 fetchCoordinatesAndAddCircles(svgContainer, null); // Pass null if no system
             })
             .catch(error => console.error('Error fetching the SVG:', error));
@@ -252,7 +263,8 @@ async function renderData(svgContainer, item, csvText) {
     var texts = svgElement.querySelectorAll('text');
     texts.forEach(function (text) {
         svgElement.appendChild(text); // Move each text element to the end of the SVG
-        text.style.pointerEvents = "none";
+        text.style.pointerEvents = "auto";
+        text.style.cursor = "pointer";
     });
 }
 
@@ -279,18 +291,24 @@ function addCircleToSVG(parent, svgElement, x, y, hoverText, systemName, entryid
     const newCircle = document.createElementNS(svgns, 'circle');
     newCircle.setAttribute('cx', x);
     newCircle.setAttribute('cy', y);
-    newCircle.setAttribute('r', '7'); // Adjust radius as needed
+    newCircle.setAttribute('r', zoomState.baseRadius / zoomState.scale); // Scale based on zoom
     newCircle.setAttribute('fill', 'red');
     newCircle.setAttribute('fill-opacity', '0.5'); // 50% transparency
     newCircle.setAttribute('class', `entry_${entryid}`); // Set the class to the entryid
 
-    // Add click event listener to copy the title to the clipboard
-    newCircle.addEventListener('click', () => {
-        navigator.clipboard.writeText(systemName).then(() => {
-            console.log(`Copied to clipboard: ${systemName}`);
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-        });
+    // Add click event listener for zoom
+    newCircle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const svg = svgElement.closest('svg') || svgElement.ownerSVGElement || parent.querySelector('svg');
+        handleZoomClick(svg, e.target, e);
+    });
+
+    // Add middle-click listener to open signals page
+    newCircle.addEventListener('mousedown', (e) => {
+        if (e.button === 1) {
+            e.preventDefault();
+            window.open(`https://signals.canonn.tech/?system=${encodeURIComponent(systemName)}`, '_blank');
+        }
     });
 
     newCircle.addEventListener('contextmenu', (event) => {
@@ -333,4 +351,108 @@ function addCircleToSVG(parent, svgElement, x, y, hoverText, systemName, entryid
 
 
     //console.log(`Added circle at (${x}, ${y}) with hover text "${hoverText}"`);
+}
+
+function setupZoomHandlers(svgContainer) {
+    const svgElement = svgContainer.querySelector('svg');
+    if (!svgElement) return;
+
+    // Add click handlers to regions and disable hover effects
+    const regions = svgElement.querySelectorAll('[id^="Region_"]');
+    regions.forEach(region => {
+        region.style.cursor = 'pointer';
+        region.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleZoomClick(svgElement, e.target, e);
+        });
+        // Disable hover effects by removing any hover classes/styles
+        region.addEventListener('mouseenter', (e) => {
+            e.target.style.fill = e.target.style.fill; // Lock current fill
+        });
+    });
+
+    // Add click handler to SVG background
+    svgElement.addEventListener('click', (e) => {
+        if (e.target === svgElement) {
+            handleZoomClick(svgElement, e.target, e);
+        }
+    });
+}
+
+function handleZoomClick(svgElement, target, event) {
+    console.log('handleZoomClick called:', {
+        isZoomed: zoomState.isZoomed,
+        targetTag: target.tagName,
+        targetId: target.id,
+        targetClass: target.className
+    });
+    
+    if (zoomState.isZoomed) {
+        console.log('Zooming out');
+        zoomOut(svgElement);
+    } else {
+        // Use mouse position to find region
+        const point = svgElement.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        const svgPoint = point.matrixTransform(svgElement.getScreenCTM().inverse());
+        console.log('Mouse click at SVG coordinates:', { x: svgPoint.x, y: svgPoint.y });
+        
+        // Find the region containing this point
+        const regions = svgElement.querySelectorAll('path[id^="Region_"]');
+        for (const region of regions) {
+            if (region.isPointInFill && region.isPointInFill(svgPoint)) {
+                console.log('Found region at mouse position:', region.id);
+                zoomToElement(svgElement, region);
+                return;
+            }
+        }
+        console.log('No region found at mouse position');
+    }
+}
+
+function zoomToElement(svgElement, target) {
+    const bbox = target.getBBox();
+    const padding = Math.min(bbox.width, bbox.height) * 0.02;
+    
+    // Store original viewBox if not already stored
+    if (!zoomState.originalViewBox) {
+        const vb = svgElement.viewBox.baseVal;
+        zoomState.originalViewBox = `${vb.x} ${vb.y} ${vb.width} ${vb.height}`;
+        zoomState.originalWidth = vb.width;
+    }
+    
+    const newWidth = bbox.width + padding * 2;
+    const newHeight = bbox.height + padding * 2;
+    
+    svgElement.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${newWidth} ${newHeight}`);
+    
+    // Disable pointer events on regions when zoomed
+    const regions = svgElement.querySelectorAll('[id^="Region_"]');
+    regions.forEach(region => region.style.pointerEvents = 'none');
+    
+    zoomState.isZoomed = true;
+    zoomState.scale = zoomState.originalWidth / newWidth;
+    updateCircleRadii(svgElement);
+}
+
+function zoomOut(svgElement) {
+    if (zoomState.originalViewBox) {
+        svgElement.setAttribute('viewBox', zoomState.originalViewBox);
+    }
+    
+    // Re-enable pointer events on regions when zoomed out
+    const regions = svgElement.querySelectorAll('[id^="Region_"]');
+    regions.forEach(region => region.style.pointerEvents = 'auto');
+    
+    zoomState.isZoomed = false;
+    zoomState.scale = 1;
+    updateCircleRadii(svgElement);
+}
+
+function updateCircleRadii(svgElement) {
+    const circles = svgElement.querySelectorAll('circle');
+    circles.forEach(circle => {
+        circle.setAttribute('r', zoomState.baseRadius / zoomState.scale);
+    });
 }
